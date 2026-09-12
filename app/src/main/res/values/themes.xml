@@ -3,6 +3,11 @@
     <!--
       Material 3 主题。DynamicColors 变体会在 Android 12+ 上启用 Monet 动态取色
       （从壁纸生成配色，即「莫奈取色」），低版本自动回退到 Material 3 默认配色。
+      这里关掉系统自带 ActionBar，改用布局里的 MaterialToolbar，避免在
+      Android 15（targetSdk 35 强制边到边）下标题被状态栏遮挡。
     -->
-    <style name="Theme.BeeCountAutoPatch" parent="Theme.Material3.DynamicColors.DayNight" />
+    <style name="Theme.BeeCountAutoPatch" parent="Theme.Material3.DynamicColors.DayNight">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
 </resources>
