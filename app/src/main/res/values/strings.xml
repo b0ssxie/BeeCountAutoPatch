@@ -2,4 +2,13 @@
 <resources>
     <string name="app_name">蜜蜂记账自动记账补丁</string>
     <string name="xposed_description">为自动记账(AutoAccounting)注入蜜蜂记账(BeeCount)适配：经 beecount://add 深链写入账单。</string>
+
+    <string name="btn_refresh">刷新</string>
+    <string name="btn_copy">复制</string>
+    <string name="btn_clear">清空</string>
+    <string name="log_hint">日志记录模块在自动记账进程里的运行情况（hook、适配器注入、每次发往蜜蜂记账的深链）。若这里始终为空，说明模块未生效：请确认 LSPosed 已启用本模块、作用域勾选了「自动记账」，且自动记账版本为 4.0.x。</string>
+    <string name="status_format">模块版本 %1$s\n日志文件：%2$s</string>
+    <string name="log_empty">（暂无日志。回到自动记账触发一笔账单后点「刷新」。）</string>
+    <string name="log_cleared">日志已清空</string>
+    <string name="log_copied">日志已复制到剪贴板</string>
 </resources>

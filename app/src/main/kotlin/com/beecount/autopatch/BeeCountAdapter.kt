@@ -75,7 +75,7 @@ class BeeCountAdapter private constructor() {
                 for (candidate in CANDIDATES) {
                     if (isInstalled(pm, candidate)) {
                         resolvedPkg = candidate
-                        XposedBridge.log("[BeeCountAutoPatch] 命中已安装包名: $candidate")
+                        RemoteLog.log(application(), "命中已安装包名: $candidate")
                         return candidate
                     }
                 }
@@ -125,9 +125,9 @@ class BeeCountAdapter private constructor() {
                     timeMillis = (get(model, "getTime") as? Number)?.toLong() ?: 0L,
                 )
                 val uri = BillMapper.buildUri(bill)
-                XposedBridge.log(
-                    "[BeeCountAutoPatch] syncBill: type=$typeName money=$amount " +
-                        "cate=${get(model, "getCateName")} uri=$uri",
+                RemoteLog.log(
+                    application(),
+                    "syncBill: type=$typeName money=$amount cate=${get(model, "getCateName")} uri=$uri",
                 )
 
                 val context = application()
@@ -139,13 +139,12 @@ class BeeCountAdapter private constructor() {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_ANIMATION)
                 }
                 val resolvable = context.packageManager.resolveActivity(intent, 0) != null
-                XposedBridge.log("[BeeCountAutoPatch] beecount 可处理该 Intent: $resolvable")
+                RemoteLog.log(application(), "beecount 可处理该 Intent: $resolvable")
                 context.startActivity(intent)
-                XposedBridge.log("[BeeCountAutoPatch] 已发送账单深链")
+                RemoteLog.log(application(), "已发送账单深链")
                 markSynced(model)
             } catch (t: Throwable) {
-                XposedBridge.log("[BeeCountAutoPatch] syncBill 失败: $t")
-                XposedBridge.log(t)
+                RemoteLog.log(application(), "syncBill 失败: ${android.util.Log.getStackTraceString(t)}")
             }
         }
 
@@ -159,7 +158,7 @@ class BeeCountAdapter private constructor() {
                 } ?: return
                 method.invoke(instance, model)
             } catch (t: Throwable) {
-                XposedBridge.log("[BeeCountAutoPatch] markSynced 失败: $t")
+                RemoteLog.log(application(), "markSynced 失败: $t")
             }
         }
 

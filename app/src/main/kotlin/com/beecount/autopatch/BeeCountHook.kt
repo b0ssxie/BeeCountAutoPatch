@@ -1,5 +1,6 @@
 package com.beecount.autopatch
 
+import android.content.Context
 import de.robv.android.xposed.IXposedHookLoadPackage
 import de.robv.android.xposed.XC_MethodHook
 import de.robv.android.xposed.XposedBridge
@@ -13,6 +14,9 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage
  * 从而让 AutoAccounting 无需修改源码即可支持蜜蜂记账。
  */
 class BeeCountHook : IXposedHookLoadPackage {
+
+    @Volatile
+    private var loggedInjected = false
 
     override fun handleLoadPackage(lpparam: XC_LoadPackage.LoadPackageParam) {
         if (lpparam.packageName != TARGET_PACKAGE) return
@@ -33,17 +37,29 @@ class BeeCountHook : IXposedHookLoadPackage {
                             injected.addAll(original)
                             injected.add(BeeCountAdapter.create(lpparam.classLoader))
                             param.result = injected
+                            if (!loggedInjected) {
+                                loggedInjected = true
+                                RemoteLog.log(appContext(lpparam.classLoader), "已注入适配器到 adapterList()")
+                            }
                         } catch (t: Throwable) {
-                            XposedBridge.log(t)
+                            RemoteLog.log(appContext(lpparam.classLoader), "注入适配器失败: $t")
                         }
                     }
                 },
             )
-            XposedBridge.log("[BeeCountAutoPatch] 已 hook AppAdapterManager.adapterList()")
+            RemoteLog.log(appContext(lpparam.classLoader), "已 hook AppAdapterManager.adapterList()")
         } catch (t: Throwable) {
             XposedBridge.log("[BeeCountAutoPatch] hook 失败: $t")
             XposedBridge.log(t)
         }
+    }
+
+    private fun appContext(classLoader: ClassLoader): Context? = try {
+        classLoader.loadClass("android.app.AndroidAppHelper")
+            .getMethod("currentApplication")
+            .invoke(null) as? Context
+    } catch (_: Throwable) {
+        null
     }
 
     private companion object {
