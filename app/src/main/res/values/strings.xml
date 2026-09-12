@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">蜜蜂记账自动记账补丁</string>
+    <string name="xposed_description">为自动记账(AutoAccounting)注入蜜蜂记账(BeeCount)适配：经 beecount://add 深链写入账单。</string>
+</resources>

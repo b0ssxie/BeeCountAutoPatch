@@ -1,0 +1,21 @@
+# Android / Gradle 构建产物
+.gradle/
+build/
+app/build/
+dist/
+*.apk
+*.aab
+
+# 本地环境（含 sdk.dir，不入库）
+local.properties
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# AiCode 本地配置
+.aicode/
+
+# 系统
+.DS_Store

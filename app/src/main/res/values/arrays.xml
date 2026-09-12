@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 默认作用域：自动记账(AutoAccounting) -->
+    <string-array name="xposed_scope">
+        <item>net.ankio.auto</item>
+    </string-array>
+</resources>
