@@ -34,6 +34,11 @@ object RemoteLog {
                     setComponent(ComponentName(MODULE_PKG, "$MODULE_PKG.LogReceiver"))
                     putExtra(EXTRA_TOKEN, TOKEN)
                     putExtra(EXTRA_LINE, line)
+                    // 模块 App 平时没有进程，系统会把它视为 stopped；不带这两个 flag 时
+                    // AMS 会直接丢弃广播（Logcat 里报 "Failed to broadcast to stopped app"）。
+                    addFlags(
+                        Intent.FLAG_INCLUDE_STOPPED_PACKAGES or Intent.FLAG_RECEIVER_FOREGROUND,
+                    )
                 },
             )
         } catch (_: Throwable) {

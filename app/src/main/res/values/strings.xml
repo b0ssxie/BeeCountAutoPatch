@@ -6,10 +6,13 @@
     <string name="btn_refresh">刷新</string>
     <string name="btn_copy">复制</string>
     <string name="btn_clear">清空</string>
-    <string name="log_hint">日志记录模块在自动记账进程里的运行情况（hook、适配器注入、每次发往蜜蜂记账的深链）。若这里始终为空，说明模块未生效：请确认 LSPosed 已启用本模块、作用域勾选了「自动记账」，且自动记账版本为 4.0.x。</string>
+    <string name="btn_selftest">自检</string>
+    <string name="log_hint">日志记录模块在自动记账进程里的运行情况（hook、适配器注入、每次发往蜜蜂记账的深链），经广播实时回传到本 App。若始终为空：① 确认 LSPosed 已启用本模块、作用域勾选了「自动记账」，且自动记账为 4.0.x；② 把本 App 的电池设置为「无限制/允许后台」，避免被系统冻结导致收不到广播；③ 点「自检」自查接收链路。</string>
     <string name="version_format">模块版本 %1$s</string>
     <string name="path_format">日志文件：%1$s</string>
     <string name="log_empty">（暂无日志。回到自动记账触发一笔账单后点「刷新」。）</string>
     <string name="log_cleared">日志已清空</string>
+    <string name="selftest_sent">已发送自检广播</string>
+    <string name="selftest_line">自检：模块 App 自己发出的广播已被收到并落盘，说明接收→写入链路正常。</string>
     <string name="log_copied">日志已复制到剪贴板</string>
 </resources>

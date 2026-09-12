@@ -2,7 +2,9 @@ package com.beecount.autopatch
 
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
 import android.view.View
@@ -31,6 +33,7 @@ class MainActivity : AppCompatActivity() {
             refresh()
             toast(R.string.log_cleared)
         }
+        findViewById<MaterialButton>(R.id.selftest).setOnClickListener { selfTest() }
         refresh()
     }
 
@@ -90,4 +93,20 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun toast(resId: Int) = Toast.makeText(this, resId, Toast.LENGTH_SHORT).show()
+
+    /**
+     * 从模块 App 自身发一条广播给自己，验证「接收 → 落盘 → 显示」链路。
+     * 自检能看到新行、而目标进程的日志进不来，说明问题出在跨进程投递（多为模块 App 被系统冻结/停止）。
+     */
+    private fun selfTest() {
+        sendBroadcast(
+            Intent(RemoteLog.ACTION).apply {
+                setComponent(ComponentName(this@MainActivity, LogReceiver::class.java))
+                putExtra(RemoteLog.EXTRA_TOKEN, RemoteLog.TOKEN)
+                putExtra(RemoteLog.EXTRA_LINE, getString(R.string.selftest_line))
+            },
+        )
+        findViewById<View>(R.id.root).postDelayed({ refresh() }, 300)
+        toast(R.string.selftest_sent)
+    }
 }
