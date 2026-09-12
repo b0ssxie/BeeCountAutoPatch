@@ -11,8 +11,8 @@ android {
         applicationId = "com.beecount.autopatch"
         minSdk = 29
         targetSdk = 35
-        versionCode = 3
-        versionName = "1.1.0"
+        versionCode = 4
+        versionName = "1.2.0"
     }
 
     buildTypes {
@@ -43,5 +43,6 @@ kotlin {
 
 dependencies {
     compileOnly("de.robv.android.xposed:api:82")
+    implementation("com.google.android.material:material:1.12.0")
     testImplementation("junit:junit:4.13.2")
 }

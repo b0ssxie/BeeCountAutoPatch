@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      Material 3 主题。DynamicColors 变体会在 Android 12+ 上启用 Monet 动态取色
+      （从壁纸生成配色，即「莫奈取色」），低版本自动回退到 Material 3 默认配色。
+    -->
+    <style name="Theme.BeeCountAutoPatch" parent="Theme.Material3.DynamicColors.DayNight" />
+</resources>
