@@ -144,11 +144,44 @@ jobs:
     permissions:
       contents: write
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # 生成「本次变更」要能拿到上一个标签，所以要完整历史。
+          fetch-depth: 0
+
       - name: Download APKs
         uses: actions/download-artifact@v4
         with:
           path: dist
           merge-multiple: true
+
+      # Release 页面是用户下载的主要入口，所以把安装说明和变更列表一起写进去。
+      - name: Build release notes
+        run: |
+          {
+            echo "### 安装包"
+            echo
+            echo "| 文件 | 说明 |"
+            echo "| --- | --- |"
+            echo "| \`*-release.apk\` | **推荐**：R8 代码压缩 + 资源压缩，体积最小 |"
+            echo "| \`*-debug.apk\` | 不混淆，用来排查「是不是混淆导致的问题」 |"
+            echo
+            echo "### 安装前确认"
+            echo
+            echo "- 需要 **Root + 支持新版 libxposed API 的 LSPosed**（模块 \`minApiVersion=101\` / \`targetApiVersion=102\`，旧框架看不到本模块）；"
+            echo "- 自动记账需为 **4.0.x**，蜜蜂记账需含 \`beecount://add\` 深链；"
+            echo "- 各次 CI 构建签名一致，可以直接覆盖安装；如果从本地自建版升级提示签名不一致，先卸载旧版本。"
+            echo
+            echo "### 本次变更"
+            echo
+            prev="$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || true)"
+            if [ -n "$prev" ]; then range="$prev..HEAD"; else range="HEAD"; fi
+            git log --no-merges --pretty='- %s' "$range" | head -50 || true
+            echo
+            echo "详细说明见 [README](https://github.com/${{ github.repository }}#readme)。"
+          } > RELEASE_BODY.md
+          cat RELEASE_BODY.md
 
       - name: Create release
         uses: softprops/action-gh-release@v2
@@ -156,4 +189,4 @@ jobs:
           files: |
             dist/*-release.apk
             dist/*-debug.apk
-          generate_release_notes: true
+          body_path: RELEASE_BODY.md
