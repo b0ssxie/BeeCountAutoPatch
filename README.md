@@ -106,22 +106,31 @@
 命令行（需 JDK 17、Android SDK 35、Gradle 8.11.1；仓库暂未包含 Gradle wrapper）：
 
 ```bash
+# 推荐：release 开了 R8 代码压缩 + 资源压缩，体积最小
+JAVA_HOME=<jdk17> ANDROID_HOME=<android-sdk> gradle assembleRelease
+
+# 不混淆的版本，排查「是不是混淆导致的问题」时用
 JAVA_HOME=<jdk17> ANDROID_HOME=<android-sdk> gradle assembleDebug
 ```
 
-运行单测（`BillMapper` 的映射逻辑）：
+运行单测（`BillMapper` / `CategoryStore` 的逻辑）：
 
 ```bash
 JAVA_HOME=<jdk17> ANDROID_HOME=<android-sdk> gradle testDebugUnitTest
 ```
 
-产物：`app/build/outputs/apk/debug/app-debug.apk`。
+产物：
+
+- `app/build/outputs/apk/release/app-release.apk` —— 推荐安装，体积最小
+- `app/build/outputs/apk/debug/app-debug.apk`
+
+> release 复用 **debug 签名**（项目没有正式签名密钥）。CI 会缓存这把 keystore，所以各次构建出来的包签名一致、可以直接覆盖安装；本地构建用的是你机器上的 `~/.android/debug.keystore`，与 CI 的签名不同，两者混装需要先卸载。
 
 ### CI（GitHub Actions）
 
 推送到 GitHub 后由 Actions 自动构建，本地不需要装 JDK / Android SDK：
 
-- 任意分支 push、任意 PR → 在仓库 **Actions** 页面下载 `BeeCountAutoPatch-debug` 产物（含单测报告）；
+- 任意分支 push、任意 PR → 在仓库 **Actions** 页面下载产物：`BeeCountAutoPatch-release`（推荐）或 `BeeCountAutoPatch-debug`，另有单测报告；
 - 推 `v*` 标签 → 自动创建 Release 并附上 APK：
 
   ```bash

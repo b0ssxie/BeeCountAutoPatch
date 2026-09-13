@@ -17,7 +17,14 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            // 体积优化：删无用代码（R8）+ 删无用资源。
+            // Xposed 入口类是运行时按名字反射加载的，靠 proguard-rules.pro 里的 keep 规则保住。
+            isMinifyEnabled = true
+            isShrinkResources = true
+            // 本项目没有发布用签名密钥，release 复用 debug 签名。
+            // CI 会缓存这把 keystore，所以各次构建出来的包签名一致、可以直接覆盖安装。
+            // 以后要用正式签名，把这里换成自己的 signingConfig 即可。
+            signingConfig = signingConfigs.getByName("debug")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
