@@ -5,9 +5,9 @@ import java.util.concurrent.TimeUnit
 /**
  * 模块 App 侧的 root 命令执行封装。
  *
- * 目标应用（自动记账）的私有目录只有它自己或 root 能碰，模块 App 想读日志、
- * 写分类名单都得借 root。这里把 `su` 的探测与超时集中处理，供
- * [RemoteLogReader] 和 [CategoryListFile] 共用。
+ * 目标应用（自动记账）的私有目录只有它自己或 root 能碰，而「分类名单」正好
+ * 存在那里（hook 侧要读它），所以模块 App 保存名单时得借 root。
+ * 这里把 `su` 的探测与超时集中处理，目前只有 [CategoryListFile] 在用。
  */
 object RootShell {
 

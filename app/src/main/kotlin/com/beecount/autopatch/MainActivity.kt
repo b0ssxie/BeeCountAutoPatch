@@ -1,8 +1,5 @@
 package com.beecount.autopatch
 
-import android.content.ClipData
-import android.content.ClipboardManager
-import android.content.Context
 import android.content.res.Configuration
 import android.os.Bundle
 import android.text.Editable
@@ -19,17 +16,19 @@ import androidx.core.view.WindowInsetsControllerCompat
 import com.google.android.material.button.MaterialButton
 
 /**
- * 模块的简单界面：
- * 1. 维护蜜蜂记账分类名单（决定「分类找不到 → 归为其他」是否生效）；
- * 2. 查看/复制/清空自动记账私有目录里的调试日志。
+ * 模块界面：维护「蜜蜂记账分类名单」。
+ *
+ * 名单决定「分类在蜜蜂记账里找不到 → 归为其他」是否生效：
+ * 文件写在自动记账的私有目录（hook 侧要读它），所以保存时可能要 root。
+ *
+ * 日志不再由本 App 读取：模块日志直接进 LSPosed 自带日志页。
  */
 class MainActivity : AppCompatActivity() {
 
-    private var content = ""
-    private var loading = false
-
     /** 用户正在编辑名单时，刷新不要用文件内容覆盖输入框。 */
     private var categoriesDirty = false
+
+    private var loading = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,9 +36,6 @@ class MainActivity : AppCompatActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContentView(R.layout.activity_main)
         applyInsets()
-        findViewById<MaterialButton>(R.id.refresh).setOnClickListener { refresh() }
-        findViewById<MaterialButton>(R.id.copy).setOnClickListener { copyLog() }
-        findViewById<MaterialButton>(R.id.clear).setOnClickListener { clearLog() }
         findViewById<MaterialButton>(R.id.save_categories).setOnClickListener { saveCategories() }
         findViewById<MaterialButton>(R.id.clear_categories).setOnClickListener { clearCategories() }
         findViewById<EditText>(R.id.categories).addTextChangedListener(object : TextWatcher {
@@ -85,25 +81,17 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /** 读取可能要起 root 进程，放到后台线程做，读完再回主线程刷新。 */
+    /** 读名单可能要起 root 进程，放到后台线程做，读完再回主线程刷新。 */
     private fun refresh() {
         if (loading) return
         loading = true
         findViewById<TextView>(R.id.version).text = getString(R.string.version_format, versionName())
-        findViewById<TextView>(R.id.status).text = getString(R.string.status_loading, LogSpec.path())
         findViewById<TextView>(R.id.category_status).text = getString(R.string.category_status_loading)
-        findViewById<TextView>(R.id.log).text = getString(R.string.log_loading)
 
         Thread {
-            val log = RemoteLogReader.read()
             val categories = CategoryListFile.read()
             runOnUiThread {
                 loading = false
-                content = log.text
-                findViewById<TextView>(R.id.status).text =
-                    getString(R.string.status_format, LogSpec.path(), log.source)
-                findViewById<TextView>(R.id.log).text =
-                    log.text.ifEmpty { getString(R.string.log_empty) }
                 showCategories(categories)
             }
         }.start()
@@ -122,7 +110,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /** 名单要写进自动记账的私有目录，所以和读日志一样可能走 root。 */
+    /** 名单要写进自动记账的私有目录，所以和 hook 侧一样可能走 root。 */
     private fun saveCategories() {
         val button = findViewById<MaterialButton>(R.id.save_categories)
         val text = findViewById<EditText>(R.id.categories).text.toString()
@@ -146,26 +134,6 @@ class MainActivity : AppCompatActivity() {
         findViewById<EditText>(R.id.categories).setText("")
         categoriesDirty = true
         saveCategories()
-    }
-
-    private fun copyLog() {
-        if (content.isEmpty()) {
-            toast(R.string.log_empty)
-            return
-        }
-        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        clipboard.setPrimaryClip(ClipData.newPlainText("BeeCountAutoPatch", content))
-        toast(R.string.log_copied)
-    }
-
-    private fun clearLog() {
-        Thread {
-            val ok = RemoteLogReader.clear()
-            runOnUiThread {
-                toast(if (ok) R.string.log_cleared else R.string.log_clear_failed)
-                refresh()
-            }
-        }.start()
     }
 
     private fun versionName(): String = runCatching {

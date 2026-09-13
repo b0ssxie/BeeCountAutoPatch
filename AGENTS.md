@@ -4,7 +4,7 @@
 
 BeeCountAutoPatch is a single-module Android app (`:app`) implementing an LSPosed module that injects a BeeCount adapter into AutoAccounting (`net.ankio.auto`).
 
-- `app/src/main/kotlin/com/beecount/autopatch/` — all Kotlin sources. `BeeCountHook` is the Xposed entry point, `BeeCountAdapter` the dynamic `IAppAdapter` proxy, and `BillMapper` / `CategoryStore` / `LogSpec` are dependency-free JVM helpers. UI-side files (`MainActivity`, `CategoryListFile`, `RootShell`) must stay free of Xposed APIs. The entry class is registered in `META-INF/xposed/java_init.list`; scope and metadata live in `scope.list` / `module.prop`.
+- `app/src/main/kotlin/com/beecount/autopatch/` — all Kotlin sources. `BeeCountHook` is the Xposed entry point, `BeeCountAdapter` the dynamic `IAppAdapter` proxy, and `BillMapper` / `CategoryStore` / `RemoteLog` are dependency-free JVM helpers. UI-side files (`MainActivity`, `CategoryListFile`, `RootShell`) must stay free of Xposed APIs. The entry class is registered in `META-INF/xposed/java_init.list`; scope and metadata live in `scope.list` / `module.prop`.
 - `META-INF/xposed/scope.list` — Xposed scope; only add genuinely supported packages.
 - `app/src/test/kotlin/com/beecount/autopatch/` — JUnit unit tests. The proxy, the Xposed bridge, and all Android-touching code are **not** unit-testable here; put logic in `BillMapper` / `CategoryStore` instead.
 - `README.md` — user-facing install/logging notes; keep it in sync with behavior changes.

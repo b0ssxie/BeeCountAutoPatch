@@ -85,7 +85,7 @@ class BeeCountAdapter private constructor() {
                 for (candidate in CANDIDATES) {
                     if (isInstalled(pm, candidate)) {
                         resolvedPkg = candidate
-                        RemoteLog.log(application(), "命中已安装包名: $candidate")
+                        RemoteLog.log("命中已安装包名: $candidate")
                         return candidate
                     }
                 }
@@ -151,36 +151,35 @@ class BeeCountAdapter private constructor() {
                 )
                 val uri = BillMapper.buildUri(bill)
                 RemoteLog.log(
-                    application(),
                     "syncBill: type=$typeName money=$amount cate=$rawCate " +
                         "resolved=${resolution?.category} fallback=${resolution?.fallbackUsed == true} uri=$uri",
                 )
                 if (resolution?.fallbackUsed == true) {
                     RemoteLog.log(
-                        application(),
                         "分类「$rawCate」不在蜜蜂记账分类名单内（或为空），已回退为「${resolution.category}」，" +
                             "原分类已写进备注",
                     )
                 } else if (resolution != null && resolution.category != resolution.original) {
                     // 子类没建、父类建了：发父类，比直接归到「其他」更贴近原意。
-                    RemoteLog.log(application(), "分类「$rawCate」改用名单里的「${resolution.category}」发送")
+                    RemoteLog.log("分类「$rawCate」改用名单里的「${resolution.category}」发送")
                 }
 
                 val context = application()
                 if (context == null) {
-                    RemoteLog.log(application(), "无可用 Context，无法记账")
+                    RemoteLog.log("无可用 Context，无法记账")
                     return
                 }
                 val intent = Intent(Intent.ACTION_VIEW, Uri.parse(uri)).apply {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_ANIMATION)
                 }
                 val resolvable = context.packageManager.resolveActivity(intent, 0) != null
-                RemoteLog.log(application(), "beecount 可处理该 Intent: $resolvable")
+                RemoteLog.log("beecount 可处理该 Intent: $resolvable")
                 context.startActivity(intent)
-                RemoteLog.log(application(), "已发送账单深链")
+                RemoteLog.log("已发送账单深链")
                 markSynced(model)
             } catch (t: Throwable) {
-                RemoteLog.log(application(), "syncBill 失败: ${android.util.Log.getStackTraceString(t)}")
+                // 直接把异常交给框架日志，LSPosed 日志里会带完整堆栈。
+                RemoteLog.log("syncBill 失败", t)
             }
         }
 
@@ -220,7 +219,7 @@ class BeeCountAdapter private constructor() {
                 } ?: return
                 method.invoke(instance, model)
             } catch (t: Throwable) {
-                RemoteLog.log(application(), "markSynced 失败: $t")
+                RemoteLog.log("markSynced 失败", t)
             }
         }
 

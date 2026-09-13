@@ -13,11 +13,14 @@ package com.beecount.autopatch
  */
 object CategoryStore {
 
+    /** 目标应用包名（本模块唯一作用域）。 */
+    const val TARGET_PKG = "net.ankio.auto"
+
     const val FILE_NAME = "autopatch_categories.txt"
 
-    /** 目标进程内的名单路径（与日志同目录）。 */
+    /** 目标进程内的名单路径。 */
     fun path(filesDirPath: String?): String =
-        if (filesDirPath.isNullOrEmpty()) "/data/data/${LogSpec.TARGET_PKG}/files/$FILE_NAME"
+        if (filesDirPath.isNullOrEmpty()) "/data/data/$TARGET_PKG/files/$FILE_NAME"
         else "$filesDirPath/$FILE_NAME"
 
     /**
