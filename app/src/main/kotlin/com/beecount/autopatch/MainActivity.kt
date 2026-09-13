@@ -2,9 +2,7 @@ package com.beecount.autopatch
 
 import android.content.ClipData
 import android.content.ClipboardManager
-import android.content.ComponentName
 import android.content.Context
-import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
 import android.view.View
@@ -17,8 +15,11 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.google.android.material.button.MaterialButton
 
-/** 模块的简单界面：查看/复制/清空调试日志。 */
+/** 模块的简单界面：查看/复制/清空自动记账私有目录里的调试日志。 */
 class MainActivity : AppCompatActivity() {
+
+    private var content = ""
+    private var loading = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -28,12 +29,7 @@ class MainActivity : AppCompatActivity() {
         applyInsets()
         findViewById<MaterialButton>(R.id.refresh).setOnClickListener { refresh() }
         findViewById<MaterialButton>(R.id.copy).setOnClickListener { copyLog() }
-        findViewById<MaterialButton>(R.id.clear).setOnClickListener {
-            LogStore.clear(this)
-            refresh()
-            toast(R.string.log_cleared)
-        }
-        findViewById<MaterialButton>(R.id.selftest).setOnClickListener { selfTest() }
+        findViewById<MaterialButton>(R.id.clear).setOnClickListener { clearLog() }
         refresh()
     }
 
@@ -70,19 +66,28 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    @Suppress("DEPRECATION")
+    /** 读取可能要起 root 进程，放到后台线程做，读完再回主线程刷新。 */
     private fun refresh() {
-        val version = runCatching {
-            packageManager.getPackageInfo(packageName, 0).versionName
-        }.getOrNull() ?: "?"
-        findViewById<TextView>(R.id.version).text = getString(R.string.version_format, version)
-        findViewById<TextView>(R.id.status).text = getString(R.string.path_format, LogStore.path(this))
-        findViewById<TextView>(R.id.log).text =
-            LogStore.read(this).ifEmpty { getString(R.string.log_empty) }
+        if (loading) return
+        loading = true
+        findViewById<TextView>(R.id.version).text = getString(R.string.version_format, versionName())
+        findViewById<TextView>(R.id.status).text = getString(R.string.status_loading, LogSpec.path())
+        findViewById<TextView>(R.id.log).text = getString(R.string.log_loading)
+
+        Thread {
+            val result = RemoteLogReader.read()
+            runOnUiThread {
+                loading = false
+                content = result.text
+                findViewById<TextView>(R.id.status).text =
+                    getString(R.string.status_format, LogSpec.path(), result.source)
+                findViewById<TextView>(R.id.log).text =
+                    result.text.ifEmpty { getString(R.string.log_empty) }
+            }
+        }.start()
     }
 
     private fun copyLog() {
-        val content = LogStore.read(this)
         if (content.isEmpty()) {
             toast(R.string.log_empty)
             return
@@ -92,21 +97,19 @@ class MainActivity : AppCompatActivity() {
         toast(R.string.log_copied)
     }
 
-    private fun toast(resId: Int) = Toast.makeText(this, resId, Toast.LENGTH_SHORT).show()
-
-    /**
-     * 从模块 App 自身发一条广播给自己，验证「接收 → 落盘 → 显示」链路。
-     * 自检能看到新行、而目标进程的日志进不来，说明问题出在跨进程投递（多为模块 App 被系统冻结/停止）。
-     */
-    private fun selfTest() {
-        sendBroadcast(
-            Intent(RemoteLog.ACTION).apply {
-                setComponent(ComponentName(this@MainActivity, LogReceiver::class.java))
-                putExtra(RemoteLog.EXTRA_TOKEN, RemoteLog.TOKEN)
-                putExtra(RemoteLog.EXTRA_LINE, getString(R.string.selftest_line))
-            },
-        )
-        findViewById<View>(R.id.root).postDelayed({ refresh() }, 300)
-        toast(R.string.selftest_sent)
+    private fun clearLog() {
+        Thread {
+            val ok = RemoteLogReader.clear()
+            runOnUiThread {
+                toast(if (ok) R.string.log_cleared else R.string.log_clear_failed)
+                refresh()
+            }
+        }.start()
     }
+
+    private fun versionName(): String = runCatching {
+        packageManager.getPackageInfo(packageName, 0).versionName
+    }.getOrNull() ?: "?"
+
+    private fun toast(resId: Int) = Toast.makeText(this, resId, Toast.LENGTH_SHORT).show()
 }

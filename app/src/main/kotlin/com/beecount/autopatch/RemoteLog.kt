@@ -1,48 +1,61 @@
 package com.beecount.autopatch
 
-import android.content.ComponentName
 import android.content.Context
-import android.content.Intent
 import de.robv.android.xposed.XposedBridge
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 /**
- * 在**目标进程（自动记账）**里记录日志。
+ * 目标进程（自动记账）里的日志。
  *
- * 目标进程与模块进程不是同一 UID，写不了模块的私有目录，所以这里把日志行通过
- * 显式广播发回模块进程的 [LogReceiver]，由它落地到 [LogStore]。
- * 同时镜像一份到 LSPosed 日志，便于在 Xposed 日志里直接查看。
+ * 日志直接写进自动记账自己的私有目录，于是**只要 hook 跑得到就一定落盘**，
+ * 不依赖模块 App 是否在运行。早先用显式广播回传模块进程，但模块 App 平时没有进程、
+ * 会被系统当作已停止/冻结的应用，广播被 AMS 直接丢弃，日志就整条丢了。
+ * 模块 App 侧由 [RemoteLogReader] 读取同一路径。
  *
  * 注意：本类只在目标进程调用，模块自身进程不要调用（那里没有 XposedBridge）。
  */
 object RemoteLog {
 
-    const val ACTION = "com.beecount.autopatch.LOG"
-    const val EXTRA_TOKEN = "token"
-    const val EXTRA_LINE = "line"
+    private const val MAX_BYTES = 256 * 1024
+    private const val KEEP_BYTES = 192 * 1024
 
-    /** 用于挡掉无关/伪造广播，两端共享。 */
-    const val TOKEN = "bcap-7f3a9c1e5d"
-
-    private const val MODULE_PKG = "com.beecount.autopatch"
+    private val lock = Any()
+    private val stamp = SimpleDateFormat("MM-dd HH:mm:ss.SSS", Locale.US)
 
     fun log(context: Context?, line: String) {
         XposedBridge.log("[BeeCountAutoPatch] $line")
-        val ctx = context?.applicationContext ?: return
-        try {
-            ctx.sendBroadcast(
-                Intent(ACTION).apply {
-                    setComponent(ComponentName(MODULE_PKG, "$MODULE_PKG.LogReceiver"))
-                    putExtra(EXTRA_TOKEN, TOKEN)
-                    putExtra(EXTRA_LINE, line)
-                    // 模块 App 平时没有进程，系统会把它视为 stopped；不带这两个 flag 时
-                    // AMS 会直接丢弃广播（Logcat 里报 "Failed to broadcast to stopped app"）。
-                    addFlags(
-                        Intent.FLAG_INCLUDE_STOPPED_PACKAGES or Intent.FLAG_RECEIVER_FOREGROUND,
-                    )
-                },
-            )
-        } catch (_: Throwable) {
-            // 广播失败不影响记账主流程
+        append(context, line)
+    }
+
+    private fun append(context: Context?, line: String) {
+        synchronized(lock) {
+            try {
+                val f = file(context)
+                f.parentFile?.let { dir ->
+                    dir.mkdirs()
+                    // 放宽目录/文件权限，让模块 App 能直接读到；失败也不影响写入。
+                    dir.setExecutable(true, false)
+                    dir.parentFile?.setExecutable(true, false)
+                }
+                f.appendText("${stamp.format(Date())}  $line\n")
+                f.setReadable(true, false)
+                f.setWritable(true, false)
+                if (f.length() > MAX_BYTES) trim(f)
+            } catch (_: Throwable) {
+                // 日志失败不能影响记账主流程
+            }
         }
+    }
+
+    /** 优先用目标进程自己的 filesDir（多用户/分区都可靠），取不到时退回包名推出来的路径。 */
+    private fun file(context: Context?): File =
+        File(context?.filesDir ?: File("/data/data/${LogSpec.TARGET_PKG}/files"), LogSpec.FILE_NAME)
+
+    private fun trim(f: File) {
+        val keep = f.readText().takeLast(KEEP_BYTES)
+        f.writeText("…（日志过长，仅保留最近部分）\n$keep")
     }
 }

@@ -17,15 +17,6 @@
             </intent-filter>
         </activity>
 
-        <!-- 接收目标进程发来的调试日志 -->
-        <receiver
-            android:name=".LogReceiver"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="com.beecount.autopatch.LOG" />
-            </intent-filter>
-        </receiver>
-
         <meta-data
             android:name="xposedmodule"
             android:value="true" />
