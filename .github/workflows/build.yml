@@ -183,6 +183,13 @@ jobs:
           } > RELEASE_BODY.md
           cat RELEASE_BODY.md
 
+      # action-gh-release 对「已存在」的 Release 只会更新附件、不会改正文（实测如此），
+      # 所以先删掉同名 Release（保留 tag），让下面的步骤按最新的正文重建。
+      - name: Drop existing release (keep tag)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release delete "$GITHUB_REF_NAME" --yes 2>/dev/null || true
+
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
