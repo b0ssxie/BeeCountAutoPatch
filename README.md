@@ -23,11 +23,13 @@
 
 代码：`BeeCountHook`（入口/hook）、`BeeCountAdapter`（动态代理）、`BillMapper`（账单→深链映射与分类兜底，纯 JVM，含单测）、`CategoryStore`（分类名单解析，纯 JVM，含单测）。
 
+本模块基于**新版 libxposed API**（LSPosed API 102）编写：入口类写在 `META-INF/xposed/java_init.list`，作用域写在 `META-INF/xposed/scope.list`，模块配置（`minApiVersion` / `targetApiVersion` / `staticScope`）写在 `META-INF/xposed/module.prop`。不再使用 `assets/xposed_init` 与 `xposedmodule` / `xposeddescription` / `xposedminversion` / `xposedscope` 这些旧版 meta-data。
+
 ---
 
 ## 环境要求
 
-- 已 Root 并安装 LSPosed（或其它兼容旧版 Xposed API 的框架）
+- 已 Root 并安装**支持新版 libxposed API 的 LSPosed**（本模块 `minApiVersion=101`、`targetApiVersion=102`；不支持现代 API 的旧框架看不到本模块）
 - 自动记账（AutoAccounting）**4.0.x**（4.0 起才有这套适配器体系）
 - 蜜蜂记账（BeeCount）：需含 `beecount://add` 深链的版本
 - 本模块 minSdk 29
@@ -46,6 +48,8 @@
 6. （可选）回本模块界面填「蜜蜂记账分类名单」，让对不上的分类自动归到「其他」，见下一节。
 
 > ⚠️ 自动记账默认的记账应用是「钱迹」。**如果没有执行第 4 步选中「蜜蜂记账」，账单只会记进自动记账自己，不会同步到蜜蜂记账。**
+
+> 从 1.2.x 升到 1.3.0 是把模块从旧版 Xposed API 换成新版 libxposed API：作用域改由模块自己声明（不用在界面上勾），升级后建议在 LSPosed 里确认模块已启用，并强制停止一次自动记账。
 
 ---
 
@@ -144,6 +148,7 @@ CI 会缓存 debug 签名密钥，因此各次构建的包可以覆盖安装升�
 ## 兼容性备注
 
 - 蜜蜂记账包名：正式版 `com.tntlikely.beecount`，dev 风味 `com.tntlikely.beecount.dev`，debug 构建再加 `.debug`；模块会自动解析实际安装的那个。
+- 本模块基于新版 libxposed API 编写（`minApiVersion=101` / `targetApiVersion=102`），需要支持该 API 的 LSPosed。
 - 本模块依赖 AutoAccounting 的适配器方法名（`adapterList`、`markSynced`）与账单模型字段名（`getMoney`/`getType`/`getCateName`/`getRemark`/`getAccountNameFrom`/`getAccountNameTo`/`getTags`/`getTime`）。上游若改名需要同步调整。
 
 ---

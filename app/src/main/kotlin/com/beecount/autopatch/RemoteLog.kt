@@ -1,7 +1,6 @@
 package com.beecount.autopatch
 
 import android.content.Context
-import de.robv.android.xposed.XposedBridge
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -11,23 +10,43 @@ import java.util.Locale
  * 目标进程（自动记账）里的日志。
  *
  * 日志直接写进自动记账自己的私有目录，于是**只要 hook 跑得到就一定落盘**，
- * 不依赖模块 App 是否在运行。早先用显式广播回传模块进程，但模块 App 平时没有进程、
- * 会被系统当作已停止/冻结的应用，广播被 AMS 直接丢弃，日志就整条丢了。
- * 模块 App 侧由 [RemoteLogReader] 读取同一路径。
+ * 不依赖模块 App 是否在运行。模块 App 侧由 [RemoteLogReader] 读取同一路径。
  *
- * 注意：本类只在目标进程调用，模块自身进程不要调用（那里没有 XposedBridge）。
+ * 新版 libxposed API（LSPosed API 102）没有全局的 `XposedBridge.log`，
+ * 所以框架日志出口由 [BeeCountHook] 在 `onModuleLoaded` 时注入到 [frameworkLog]。
+ *
+ * 注意：本类只在目标进程调用，模块自身进程不要调用。
  */
 object RemoteLog {
 
     private const val MAX_BYTES = 256 * 1024
     private const val KEEP_BYTES = 192 * 1024
 
-    private val lock = Any()
-    private val stamp = SimpleDateFormat("MM-dd HH:mm:ss.SSS", Locale.US)
+    /**
+     * 框架日志出口：(消息, 异常或 null) -> Unit。
+     * 由模块入口注入；模块 App 进程里一直是 null（那边不会写日志）。
+     */
+    @Volatile
+    var frameworkLog: ((String, Throwable?) -> Unit)? = null
 
+    /** 普通日志。 */
     fun log(context: Context?, line: String) {
-        XposedBridge.log("[BeeCountAutoPatch] $line")
+        logToFramework(line, null)
         append(context, line)
+    }
+
+    /** 带异常的日志（框架侧按 ERROR 记）。 */
+    fun log(context: Context?, line: String, tr: Throwable) {
+        logToFramework(line, tr)
+        append(context, line)
+    }
+
+    private fun logToFramework(line: String, tr: Throwable?) {
+        try {
+            frameworkLog?.invoke(line, tr)
+        } catch (_: Throwable) {
+            // 框架日志失败不能影响记账主流程
+        }
     }
 
     private fun append(context: Context?, line: String) {
@@ -58,4 +77,7 @@ object RemoteLog {
         val keep = f.readText().takeLast(KEEP_BYTES)
         f.writeText("…（日志过长，仅保留最近部分）\n$keep")
     }
+
+    private val lock = Any()
+    private val stamp = SimpleDateFormat("MM-dd HH:mm:ss.SSS", Locale.US)
 }

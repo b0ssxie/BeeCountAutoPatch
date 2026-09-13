@@ -11,8 +11,8 @@ android {
         applicationId = "com.beecount.autopatch"
         minSdk = 29
         targetSdk = 35
-        versionCode = 8
-        versionName = "1.2.4"
+        versionCode = 9
+        versionName = "1.3.0"
     }
 
     buildTypes {
@@ -29,6 +29,14 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+        }
+    }
+
+    packaging {
+        resources {
+            // 新版 API 的入口类列表 / 作用域 / 模块配置就靠这几个文件，
+            // 显式声明保留，免得被资源合并的默认排除规则吃掉（官方示例也是这么写的）。
+            merges += "META-INF/xposed/*"
         }
     }
 
@@ -49,7 +57,8 @@ kotlin {
 }
 
 dependencies {
-    compileOnly("de.robv.android.xposed:api:82")
+    // 新版 libxposed API（LSPosed API 102），运行时由框架提供
+    compileOnly("io.github.libxposed:api:102.0.0")
     implementation("com.google.android.material:material:1.12.0")
     testImplementation("junit:junit:4.13.2")
 }

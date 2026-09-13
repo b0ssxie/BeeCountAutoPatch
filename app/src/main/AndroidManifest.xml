@@ -1,8 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!--
+      新版 libxposed API（LSPosed API 102）不再用 xposedmodule/xposeddescription/xposedminversion/
+      xposedscope 这些 meta-data：
+      - 模块名 = android:label，模块说明 = android:description
+      - 作用域 = META-INF/xposed/scope.list，模块配置 = META-INF/xposed/module.prop
+      - 入口类列表 = META-INF/xposed/java_init.list
+      见 https://github.com/LSPosed/LSPosed/wiki/Develop-Xposed-Modules-Using-Modern-Xposed-API
+    -->
     <application
         android:label="@string/app_name"
+        android:description="@string/xposed_description"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:theme="@style/Theme.BeeCountAutoPatch"
@@ -17,19 +26,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <meta-data
-            android:name="xposedmodule"
-            android:value="true" />
-        <meta-data
-            android:name="xposeddescription"
-            android:value="@string/xposed_description" />
-        <meta-data
-            android:name="xposedminversion"
-            android:value="82" />
-        <meta-data
-            android:name="xposedscope"
-            android:resource="@array/xposed_scope" />
     </application>
 
 </manifest>

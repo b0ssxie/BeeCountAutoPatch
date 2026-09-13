@@ -1,10 +1,16 @@
-# Xposed 通过 assets/xposed_init 里写死的类名反射加载入口，
-# 所以本包下的类（尤其 BeeCountHook）不能被 R8 删掉或改名。
--keep class com.beecount.autopatch.** { *; }
+# ---- 新版 libxposed API 官方要求的规则 ----
+# 注解是 compileOnly 带来的，运行时没有这些类，缺类告警要忽略。
+-dontwarn io.github.libxposed.annotation.**
+# 入口类被混淆时，把 META-INF/xposed/java_init.list 里的类名一起改写。
+-adaptresourcefilecontents META-INF/xposed/java_init.list
+# 保证 XposedModule 子类（模块入口）不被裁掉。
+-keep,allowoptimization,allowobfuscation public class * extends io.github.libxposed.api.XposedModule {
+    public <init>();
+}
 
-# Xposed API 是 compileOnly，运行时由框架提供；缺类告警要忽略，否则 R8 会报错。
--keep class de.robv.android.xposed.** { *; }
--dontwarn de.robv.android.xposed.**
+# ---- 本模块的加固 ----
+# 双保险：入口类不改名，java_init.list 里写的名字永远对得上。
+-keep class com.beecount.autopatch.BeeCountHook { *; }
 
 # 保留注解信息，反射读取时不会丢。
 -keepattributes *Annotation*

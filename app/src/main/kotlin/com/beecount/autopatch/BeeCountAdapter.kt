@@ -5,7 +5,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
-import de.robv.android.xposed.XposedBridge
 import java.io.File
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
@@ -169,7 +168,7 @@ class BeeCountAdapter private constructor() {
 
                 val context = application()
                 if (context == null) {
-                    XposedBridge.log("[BeeCountAutoPatch] 无可用 Context，无法记账")
+                    RemoteLog.log(application(), "无可用 Context，无法记账")
                     return
                 }
                 val intent = Intent(Intent.ACTION_VIEW, Uri.parse(uri)).apply {
@@ -226,16 +225,12 @@ class BeeCountAdapter private constructor() {
         }
 
         private fun application(): Context? {
-            try {
-                val app = cl.loadClass("net.ankio.auto.AppKt").getMethod("getAutoApp").invoke(null)
-                if (app is Context) return app
-            } catch (_: Throwable) {
-                // 回退到 Xposed 的 AndroidAppHelper
-            }
+            // 1) 模块 hook Application#onCreate 抓到的实例（不依赖目标应用的内部实现）
+            AppContext.get()?.let { return it }
+            // 2) 目标应用自己暴露的 Context
             return try {
-                cl.loadClass("android.app.AndroidAppHelper")
-                    .getMethod("currentApplication")
-                    .invoke(null) as? Context
+                val app = cl.loadClass("net.ankio.auto.AppKt").getMethod("getAutoApp").invoke(null)
+                app as? Context
             } catch (_: Throwable) {
                 null
             }
