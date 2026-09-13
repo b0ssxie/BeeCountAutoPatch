@@ -70,6 +70,32 @@ jobs:
       - name: Assemble APKs
         run: gradle --no-daemon :app:assembleDebug :app:assembleRelease
 
+      # 新版 API 的模块元数据必须实实在在打进 APK，否则装到手机上框架根本不认这个模块，
+      # 而那种失败在本地编译阶段是看不出来的，所以这里直接在构建时验一遍。
+      - name: Verify module metadata inside APK
+        run: |
+          apk=app/build/outputs/apk/release/app-release.apk
+          missing=0
+          for f in java_init.list module.prop scope.list; do
+            if ! unzip -l "$apk" | grep -q "META-INF/xposed/$f"; then
+              echo "::error::APK 里缺少 META-INF/xposed/$f"
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            unzip -l "$apk" | grep -i 'META-INF/' || true
+            exit 1
+          fi
+          {
+            echo "### APK 内的模块元数据"
+            echo '```'
+            for f in java_init.list module.prop scope.list; do
+              echo "--- $f"
+              unzip -p "$apk" "META-INF/xposed/$f"
+            done
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
       # PR 的 GITHUB_REF_NAME 形如 "123/merge"，斜杠不能出现在文件名里。
       - name: Collect APKs
         run: |
