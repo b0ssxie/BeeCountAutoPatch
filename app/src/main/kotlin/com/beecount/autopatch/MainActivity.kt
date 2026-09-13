@@ -5,7 +5,10 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.res.Configuration
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.View
+import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -15,11 +18,18 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.google.android.material.button.MaterialButton
 
-/** 模块的简单界面：查看/复制/清空自动记账私有目录里的调试日志。 */
+/**
+ * 模块的简单界面：
+ * 1. 维护蜜蜂记账分类名单（决定「分类找不到 → 归为其他」是否生效）；
+ * 2. 查看/复制/清空自动记账私有目录里的调试日志。
+ */
 class MainActivity : AppCompatActivity() {
 
     private var content = ""
     private var loading = false
+
+    /** 用户正在编辑名单时，刷新不要用文件内容覆盖输入框。 */
+    private var categoriesDirty = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,6 +40,15 @@ class MainActivity : AppCompatActivity() {
         findViewById<MaterialButton>(R.id.refresh).setOnClickListener { refresh() }
         findViewById<MaterialButton>(R.id.copy).setOnClickListener { copyLog() }
         findViewById<MaterialButton>(R.id.clear).setOnClickListener { clearLog() }
+        findViewById<MaterialButton>(R.id.save_categories).setOnClickListener { saveCategories() }
+        findViewById<MaterialButton>(R.id.clear_categories).setOnClickListener { clearCategories() }
+        findViewById<EditText>(R.id.categories).addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
+            override fun afterTextChanged(s: Editable?) {
+                categoriesDirty = true
+            }
+        })
         refresh()
     }
 
@@ -72,19 +91,61 @@ class MainActivity : AppCompatActivity() {
         loading = true
         findViewById<TextView>(R.id.version).text = getString(R.string.version_format, versionName())
         findViewById<TextView>(R.id.status).text = getString(R.string.status_loading, LogSpec.path())
+        findViewById<TextView>(R.id.category_status).text = getString(R.string.category_status_loading)
         findViewById<TextView>(R.id.log).text = getString(R.string.log_loading)
 
         Thread {
-            val result = RemoteLogReader.read()
+            val log = RemoteLogReader.read()
+            val categories = CategoryListFile.read()
             runOnUiThread {
                 loading = false
-                content = result.text
+                content = log.text
                 findViewById<TextView>(R.id.status).text =
-                    getString(R.string.status_format, LogSpec.path(), result.source)
+                    getString(R.string.status_format, LogSpec.path(), log.source)
                 findViewById<TextView>(R.id.log).text =
-                    result.text.ifEmpty { getString(R.string.log_empty) }
+                    log.text.ifEmpty { getString(R.string.log_empty) }
+                showCategories(categories)
             }
         }.start()
+    }
+
+    private fun showCategories(result: CategoryListFile.Result) {
+        val count = CategoryStore.parse(result.text).size
+        findViewById<TextView>(R.id.category_status).text = if (count > 0) {
+            getString(R.string.category_status_ok, count, result.source)
+        } else {
+            getString(R.string.category_status_none)
+        }
+        if (!categoriesDirty) {
+            findViewById<EditText>(R.id.categories).setText(result.text)
+            categoriesDirty = false
+        }
+    }
+
+    /** 名单要写进自动记账的私有目录，所以和读日志一样可能走 root。 */
+    private fun saveCategories() {
+        val button = findViewById<MaterialButton>(R.id.save_categories)
+        val text = findViewById<EditText>(R.id.categories).text.toString()
+        button.isEnabled = false
+        Thread {
+            val saved = CategoryListFile.save(text)
+            runOnUiThread {
+                button.isEnabled = true
+                if (saved) {
+                    categoriesDirty = false
+                    toast(if (text.isBlank()) R.string.category_saved_empty else R.string.category_saved)
+                    refresh()
+                } else {
+                    toast(R.string.category_save_failed)
+                }
+            }
+        }.start()
+    }
+
+    private fun clearCategories() {
+        findViewById<EditText>(R.id.categories).setText("")
+        categoriesDirty = true
+        saveCategories()
     }
 
     private fun copyLog() {

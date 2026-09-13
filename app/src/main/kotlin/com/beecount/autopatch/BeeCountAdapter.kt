@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import de.robv.android.xposed.XposedBridge
+import java.io.File
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
@@ -33,6 +34,9 @@ class BeeCountAdapter private constructor() {
 
         const val NAME = "蜜蜂记账"
 
+        /** 分类名单文件大小上限（1 MiB）。 */
+        private const val MAX_CATEGORY_FILE_BYTES = 1L shl 20
+
         /** 生成一个实现了目标进程 `IAppAdapter` 接口的代理实例。 */
         fun create(classLoader: ClassLoader): Any {
             val iface = classLoader.loadClass("net.ankio.auto.adapter.IAppAdapter")
@@ -44,6 +48,13 @@ class BeeCountAdapter private constructor() {
 
         @Volatile
         private var resolvedPkg: String? = null
+
+        /** 分类名单缓存：避免每笔账单都读一次文件。文件 mtime 变化时自动失效。 */
+        @Volatile
+        private var categoryCache: Set<String>? = null
+
+        @Volatile
+        private var categoryCacheStamp: Long = Long.MIN_VALUE
 
         override fun invoke(proxy: Any, method: Method, args: Array<out Any?>?): Any? {
             return when (method.name) {
@@ -114,11 +125,26 @@ class BeeCountAdapter private constructor() {
                 val tags = (get(model, "getTags") as? String)
                     .orEmpty().split(",").map { it.trim() }.filter { it.isNotEmpty() }
 
+                val rawCate = (get(model, "getCateName") as? String).orEmpty()
+                val rawNote = (get(model, "getRemark") as? String)?.takeIf { it.isNotEmpty() }
+
+                // 转账没有分类；只有收支账单才做「找不到 → 其他」的兜底。
+                val resolution = if (type == "transfer") {
+                    null
+                } else {
+                    BillMapper.resolveCategory(rawCate, loadKnownCategories())
+                }
+                val note = if (resolution?.fallbackUsed == true) {
+                    BillMapper.mergeNoteWithOriginalCategory(rawNote, resolution.original)
+                } else {
+                    rawNote
+                }
+
                 val bill = BillMapper.Bill(
                     amount = amount,
                     type = type,
-                    category = BillMapper.categoryOf((get(model, "getCateName") as? String).orEmpty()),
-                    note = (get(model, "getRemark") as? String)?.takeIf { it.isNotEmpty() },
+                    category = resolution?.category,
+                    note = note,
                     account = (get(model, "getAccountNameFrom") as? String)?.takeIf { it.isNotEmpty() },
                     toAccount = (get(model, "getAccountNameTo") as? String)?.takeIf { it.isNotEmpty() },
                     tags = tags,
@@ -127,8 +153,19 @@ class BeeCountAdapter private constructor() {
                 val uri = BillMapper.buildUri(bill)
                 RemoteLog.log(
                     application(),
-                    "syncBill: type=$typeName money=$amount cate=${get(model, "getCateName")} uri=$uri",
+                    "syncBill: type=$typeName money=$amount cate=$rawCate " +
+                        "resolved=${resolution?.category} fallback=${resolution?.fallbackUsed == true} uri=$uri",
                 )
+                if (resolution?.fallbackUsed == true) {
+                    RemoteLog.log(
+                        application(),
+                        "分类「$rawCate」不在蜜蜂记账分类名单内（或为空），已回退为「${resolution.category}」，" +
+                            "原分类已写进备注",
+                    )
+                } else if (resolution != null && resolution.category != resolution.original) {
+                    // 子类没建、父类建了：发父类，比直接归到「其他」更贴近原意。
+                    RemoteLog.log(application(), "分类「$rawCate」改用名单里的「${resolution.category}」发送")
+                }
 
                 val context = application()
                 if (context == null) {
@@ -146,6 +183,32 @@ class BeeCountAdapter private constructor() {
             } catch (t: Throwable) {
                 RemoteLog.log(application(), "syncBill 失败: ${android.util.Log.getStackTraceString(t)}")
             }
+        }
+
+        /**
+         * 读取蜜蜂记账分类名单（可选，由用户在模块界面维护）。
+         *
+         * 文件：`/data/data/net.ankio.auto/files/autopatch_categories.txt`，每行一个分类名。
+         * - 文件不存在/为空 → 返回 null，表示名单未知：保持原分类发送，只有空分类才兜底为「其他」。
+         * - 文件存在 → 返回名单：命中的分类按蜜蜂记账里的写法发送，没命中的（含空分类）兜底为「其他」，
+         *   原始分类写进备注，避免丢信息。
+         *
+         * 带 mtime 缓存，账单连续写入时不会反复读文件。
+         */
+        private fun loadKnownCategories(): Set<String>? = try {
+            val ctx = application()
+            val f = File(CategoryStore.path(ctx?.filesDir?.absolutePath))
+            // 名单异常大（用户手写坏了）时直接当未知处理，别把目标进程读崩。
+            val usable = f.isFile && f.length() in 1..MAX_CATEGORY_FILE_BYTES
+            val stamp = if (usable) f.lastModified() else -1L
+            if (stamp != categoryCacheStamp) {
+                val parsed = if (usable) CategoryStore.parse(f.readText()) else emptySet()
+                categoryCache = parsed.ifEmpty { null }
+                categoryCacheStamp = stamp
+            }
+            categoryCache
+        } catch (_: Throwable) {
+            null
         }
 
         /** 通知 AutoAccounting 该账单已同步，避免停留在待同步状态。 */

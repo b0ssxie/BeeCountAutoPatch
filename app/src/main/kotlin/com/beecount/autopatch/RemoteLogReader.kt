@@ -1,7 +1,6 @@
 package com.beecount.autopatch
 
 import java.io.File
-import java.util.concurrent.TimeUnit
 
 /**
  * 模块 App 侧读取 [LogSpec.path] 指向的日志。
@@ -14,10 +13,6 @@ object RemoteLogReader {
 
     /** [source] 说明日志来源或失败原因。 */
     data class Result(val text: String, val source: String, val ok: Boolean)
-
-    private const val TIMEOUT_SECONDS = 20L
-
-    private val SU_BINARIES = listOf("su", "/system/bin/su", "/system/xbin/su")
 
     fun read(): Result {
         val path = LogSpec.path()
@@ -36,7 +31,7 @@ object RemoteLogReader {
                 return true
             }
         }
-        return rootExec("rm -f $path") != null
+        return RootShell.exec("rm -f ${shellQuote(path)}") != null
     }
 
     private fun directRead(path: String): String? = runCatching {
@@ -44,20 +39,7 @@ object RemoteLogReader {
     }.getOrNull()
 
     private fun rootRead(path: String): String? =
-        rootExec("cat $path")?.takeIf { it.isNotEmpty() }
+        RootShell.exec("cat ${shellQuote(path)}")?.takeIf { it.isNotEmpty() }
 
-    /** 依次尝试各个 su 路径执行 [command]；未授权/不可用时返回 null。 */
-    private fun rootExec(command: String): String? {
-        for (bin in SU_BINARIES) {
-            val out = runCatching {
-                val process = ProcessBuilder(bin, "-c", command).start()
-                val text = process.inputStream.bufferedReader().use { it.readText() }
-                val finished = process.waitFor(TIMEOUT_SECONDS, TimeUnit.SECONDS)
-                process.destroy()
-                if (finished && process.exitValue() == 0) text else null
-            }.getOrNull()
-            if (out != null) return out
-        }
-        return null
-    }
+    private fun shellQuote(value: String): String = "'" + value.replace("'", "'\\''") + "'"
 }
