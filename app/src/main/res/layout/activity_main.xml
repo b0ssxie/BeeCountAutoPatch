@@ -4,18 +4,57 @@
     android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/colorSurface"
+    android:background="?attr/colorSurfaceVariant"
     android:orientation="vertical">
 
-    <com.google.android.material.appbar.MaterialToolbar
+    <!-- 顶栏：底色用的是 primaryContainer，所以状态栏区域也能被铺满（insets 由代码补进 padding） -->
+    <LinearLayout
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="?attr/colorPrimaryContainer"
-        android:minHeight="?attr/actionBarSize"
-        app:title="@string/app_name"
-        app:titleTextAppearance="@style/TextAppearance.Material3.TitleMedium"
-        app:titleTextColor="?attr/colorOnPrimaryContainer" />
+        android:orientation="vertical"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="12dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:background="@drawable/bg_logo_badge"
+                android:contentDescription="@null"
+                android:padding="10dp"
+                android:src="@drawable/ic_bee_mark"
+                app:tint="?attr/colorOnPrimaryContainer" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/app_name"
+                    android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
+                    android:textColor="?attr/colorOnPrimaryContainer" />
+
+                <TextView
+                    android:id="@+id/version"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                    android:textColor="?attr/colorOnPrimaryContainer" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
 
     <ScrollView
         android:layout_width="match_parent"
@@ -29,76 +68,21 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <TextView
-                android:id="@+id/version"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
-                android:textColor="?attr/colorOnSurface" />
-
-            <TextView
-                android:id="@+id/status"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                android:textColor="?attr/colorOnSurfaceVariant"
-                android:textIsSelectable="true" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:text="@string/log_hint"
-                android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                android:textColor="?attr/colorOnSurfaceVariant" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="14dp"
-                android:orientation="horizontal">
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/refresh"
-                    style="@style/Widget.Material3.Button.TonalButton"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/btn_refresh" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/copy"
-                    style="@style/Widget.Material3.Button.TonalButton"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:layout_weight="1"
-                    android:text="@string/btn_copy" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/clear"
-                    style="@style/Widget.Material3.Button.TonalButton"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:layout_weight="1"
-                    android:text="@string/btn_clear" />
-            </LinearLayout>
-
+            <!-- 分类兜底 -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="14dp"
-                app:cardCornerRadius="16dp"
+                app:cardBackgroundColor="?attr/colorSurface"
+                app:cardCornerRadius="20dp"
                 app:cardElevation="0dp"
+                app:strokeColor="?attr/colorOutline"
                 app:strokeWidth="1dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="12dp">
+                    android:padding="16dp">
 
                     <TextView
                         android:layout_width="match_parent"
@@ -113,28 +97,33 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
                         android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                        android:textColor="?attr/colorOnSurfaceVariant" />
+                        android:textColor="?attr/colorPrimary" />
 
-                    <EditText
-                        android:id="@+id/categories"
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:autofillHints=""
-                        android:fontFamily="monospace"
-                        android:gravity="top|start"
-                        android:hint="@string/category_placeholder"
-                        android:importantForAutofill="no"
-                        android:inputType="textMultiLine|textNoSuggestions"
-                        android:maxLines="8"
-                        android:minLines="3"
-                        android:scrollbars="vertical"
-                        android:textSize="12sp" />
+                        android:layout_marginTop="12dp"
+                        android:hint="@string/category_placeholder">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/categories"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="monospace"
+                            android:gravity="top|start"
+                            android:importantForAutofill="no"
+                            android:inputType="textMultiLine|textNoSuggestions"
+                            android:maxLines="6"
+                            android:minLines="3"
+                            android:scrollbars="vertical"
+                            android:textSize="12sp" />
+                    </com.google.android.material.textfield.TextInputLayout>
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
+                        android:layout_marginTop="8dp"
                         android:text="@string/category_hint"
                         android:textAppearance="@style/TextAppearance.Material3.BodySmall"
                         android:textColor="?attr/colorOnSurfaceVariant" />
@@ -142,7 +131,7 @@
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
+                        android:layout_marginTop="12dp"
                         android:orientation="horizontal">
 
                         <com.google.android.material.button.MaterialButton
@@ -151,7 +140,9 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="@string/btn_save_categories" />
+                            android:text="@string/btn_save_categories"
+                            app:icon="@drawable/ic_check"
+                            app:iconTint="?attr/colorOnSecondaryContainer" />
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/clear_categories"
@@ -160,44 +151,118 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="8dp"
                             android:layout_weight="1"
-                            android:text="@string/btn_clear_categories" />
+                            android:text="@string/btn_clear_categories"
+                            app:icon="@drawable/ic_close"
+                            app:iconTint="?attr/colorPrimary" />
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="@string/log_title"
-                android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
-                android:textColor="?attr/colorOnSurface" />
-
+            <!-- 运行日志 -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                app:cardCornerRadius="16dp"
+                android:layout_marginTop="16dp"
+                app:cardBackgroundColor="?attr/colorSurface"
+                app:cardCornerRadius="20dp"
                 app:cardElevation="0dp"
+                app:strokeColor="?attr/colorOutline"
                 app:strokeWidth="1dp">
 
-                <ScrollView
+                <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="360dp"
-                    android:fillViewport="true"
-                    android:padding="12dp">
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
                     <TextView
-                        android:id="@+id/log"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:fontFamily="monospace"
-                        android:textColor="?attr/colorOnSurface"
-                        android:textIsSelectable="true"
-                        android:textSize="12sp" />
-                </ScrollView>
+                        android:text="@string/log_title"
+                        android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
+                        android:textColor="?attr/colorOnSurface" />
+
+                    <TextView
+                        android:id="@+id/status"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:textIsSelectable="true" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="@string/log_hint"
+                        android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                        android:textColor="?attr/colorOnSurfaceVariant" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:orientation="horizontal">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/refresh"
+                            style="@style/Widget.Material3.Button.TonalButton"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/btn_refresh"
+                            app:icon="@drawable/ic_refresh"
+                            app:iconTint="?attr/colorOnSecondaryContainer" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/copy"
+                            style="@style/Widget.Material3.Button.TonalButton"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:layout_weight="1"
+                            android:text="@string/btn_copy"
+                            app:icon="@drawable/ic_copy"
+                            app:iconTint="?attr/colorOnSecondaryContainer" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/clear"
+                            style="@style/Widget.Material3.Button.TonalButton"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:layout_weight="1"
+                            android:text="@string/btn_clear"
+                            app:icon="@drawable/ic_delete"
+                            app:iconTint="?attr/colorOnSecondaryContainer" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="320dp"
+                        android:layout_marginTop="12dp"
+                        android:background="@drawable/bg_log_box"
+                        android:orientation="vertical"
+                        android:padding="12dp">
+
+                        <ScrollView
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:scrollbars="vertical">
+
+                            <TextView
+                                android:id="@+id/log"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="monospace"
+                                android:textColor="?attr/colorOnSurface"
+                                android:textIsSelectable="true"
+                                android:textSize="12sp" />
+                        </ScrollView>
+                    </LinearLayout>
+                </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
         </LinearLayout>
     </ScrollView>
-
 </LinearLayout>

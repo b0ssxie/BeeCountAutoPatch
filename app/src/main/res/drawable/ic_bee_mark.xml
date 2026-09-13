@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- 六边形（蜂巢） -->
+    <path android:strokeColor="#FF000000" android:strokeWidth="1.6" android:strokeLineCap="round" android:strokeLineJoin="round" android:fillColor="#00000000" android:pathData="M12,3 L20,7.4 L20,16.6 L12,21 L4,16.6 L4,7.4 Z" />
+    <!-- 里面的右箭头：表示把账单写进蜜蜂记账 -->
+    <path android:strokeColor="#FF000000" android:strokeWidth="1.6" android:strokeLineCap="round" android:strokeLineJoin="round" android:fillColor="#00000000" android:pathData="M8.5,12 L15.4,12 M12.6,9.1 L15.4,12 L12.6,14.9" />
+</vector>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 深色下的蜂蜜配色；Android 12+ 同样会被 Monet 取色覆盖。 -->
+    <style name="Base.Theme.BeeCountAutoPatch" parent="Theme.Material3.DynamicColors.DayNight">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+
+        <item name="colorPrimary">#FFFFB74D</item>
+        <item name="colorOnPrimary">#FF472A00</item>
+        <item name="colorPrimaryContainer">#FF633E00</item>
+        <item name="colorOnPrimaryContainer">#FFFFDEA6</item>
+        <item name="colorSecondary">#FFD9C18C</item>
+        <item name="colorOnSecondary">#FF3B2F0B</item>
+        <item name="colorSecondaryContainer">#FF53461F</item>
+        <item name="colorOnSecondaryContainer">#FFF6E0B0</item>
+
+        <item name="colorSurface">#FF1D1B16</item>
+        <item name="colorOnSurface">#FFE8E2D9</item>
+        <item name="colorSurfaceVariant">#FF3A332A</item>
+        <item name="colorOnSurfaceVariant">#FFD3C4B4</item>
+        <item name="colorOutline">#FF8A7B6C</item>
+        <item name="android:colorBackground">#FF1D1B16</item>
+        <item name="colorOnBackground">#FFE8E2D9</item>
+    </style>
+</resources>

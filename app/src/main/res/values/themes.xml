@@ -2,12 +2,32 @@
 <resources>
     <!--
       Material 3 主题。DynamicColors 变体会在 Android 12+ 上启用 Monet 动态取色
-      （从壁纸生成配色，即「莫奈取色」），低版本自动回退到 Material 3 默认配色。
-      这里关掉系统自带 ActionBar，改用布局里的 MaterialToolbar，避免在
+      （从壁纸生成配色，即「莫奈取色」），此时下面这些颜色会被系统配色覆盖；
+      低版本或未取色时用这组蜂蜜色。
+      这里关掉系统自带 ActionBar，改用布局里的自定义顶栏，避免在
       Android 15（targetSdk 35 强制边到边）下标题被状态栏遮挡。
     -->
-    <style name="Theme.BeeCountAutoPatch" parent="Theme.Material3.DynamicColors.DayNight">
+    <style name="Base.Theme.BeeCountAutoPatch" parent="Theme.Material3.DynamicColors.DayNight">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
+
+        <item name="colorPrimary">#FF8A5100</item>
+        <item name="colorOnPrimary">#FFFFFFFF</item>
+        <item name="colorPrimaryContainer">#FFFFDEA6</item>
+        <item name="colorOnPrimaryContainer">#FF2B1700</item>
+        <item name="colorSecondary">#FF6E5C33</item>
+        <item name="colorOnSecondary">#FFFFFFFF</item>
+        <item name="colorSecondaryContainer">#FFF6E0B0</item>
+        <item name="colorOnSecondaryContainer">#FF261A00</item>
+
+        <item name="colorSurface">#FFFFFBF5</item>
+        <item name="colorOnSurface">#FF211A11</item>
+        <item name="colorSurfaceVariant">#FFF0E0CC</item>
+        <item name="colorOnSurfaceVariant">#FF52453A</item>
+        <item name="colorOutline">#FF85736B</item>
+        <item name="android:colorBackground">#FFFFFBF5</item>
+        <item name="colorOnBackground">#FF211A11</item>
     </style>
+
+    <style name="Theme.BeeCountAutoPatch" parent="Base.Theme.BeeCountAutoPatch" />
 </resources>
